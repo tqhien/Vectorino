@@ -1,6 +1,6 @@
 # Vectorino
 
-[Ceci est une archive du projet Vectorino qui n'est pas de moi, accessible à la page www.facebook.com/vectorino. Je le mets ici à disposition pour archive du message posté sur Facebook]
+[Ceci est une archive du projet Vectorino qui n'est pas de moi, accessible à la page https://www.facebook.com/Vectorino. Je le mets ici à disposition pour archive du message posté sur Facebook]
 
 C'est un compteur artisanal pondu en avril 2018 destiné aux motos pour une utilisation mixte, qui fonctionne avec 3 modes possibles qu'on choisit au démarrage :
 Rallye "mode VECTORINO" :
