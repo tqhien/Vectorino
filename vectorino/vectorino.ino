@@ -84,26 +84,52 @@
 
 // Affiche ou non les messages de debogage
 #ifdef DEBUG
-  #define DEBUG_BEGIN(x) Serial.begin(x)
   #define DEBUG_PRINTLN(x) Serial.println(x)
   #define DEBUG_PRINT(x) Serial.print(x)
 #else // pas de débogage, on le définit donc rien pour les appels à DEBUG_*
-  #define DEBUG_BEGIN(x)
   #define DEBUG_PRINTLN(x)
   #define DEBUG_PRINT(x)
 #endif
 
-//bibliothèques pour écran ST7735
-#include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_ST7735.h> // Hardware-specific library
-#include <SPI.h>
-//affectation des pins pour l'écran ST7735
-#define TFT_CS     10
-#define TFT_RST    8
-#define TFT_DC     9
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS,  TFT_DC, TFT_RST);
-#define TFT_SCLK 13
-#define TFT_MOSI 11  
+//Définition de l'interface de sortie : soit adafruit TFT (par défaut), soit console, soit pour un autre affichage
+// On définira des macros pour chaque interface. L'appel sera toujours le même mais la fonction réellement appelée sera adaptée à l'interface
+
+#define ADAFRUIT_TFT // commenter pour activer l'affichage par console, sinon c'est le TFT Adafruit par défaut
+
+#ifdef ADAFRUIT_TFT
+  //bibliothèques pour écran ST7735
+  #include <Adafruit_GFX.h>    // Core graphics library
+  #include <Adafruit_ST7735.h> // Hardware-specific library
+  #include <SPI.h>
+  //affectation des pins pour l'écran ST7735
+  #define tft_CS     10
+  #define tft_RST    8
+  #define tft_DC     9
+  Adafruit_ST7735 tft = Adafruit_ST7735(tft_CS,  tft_DC, tft_RST);
+  #define tft_SCLK 13
+  #define tft_MOSI 11  
+#endif
+
+// Selon l'interface de sortie, on définit les macros en accord
+#ifdef ADAFRUIT_TFT
+  #define INITIALISEECRAN(x) tft.initR(x)
+  #define REMPLITECRAN(x) tft.fillScreen(x)
+  #define AFFICHE(x) tft.print(x)
+  #define AFFICHELN(x) tft.println(x)
+  #define POSITIONCURSEUR(x,y) tft.setCursor(x,y)
+  #define TAILLETEXTE(x) tft.setTextSize (x)
+  #define COULEURTEXTE(x,y) tft.setTextColor(x,y)
+  #define RETOURLIGNE(x)
+#else
+  #define INITIALISEECRAN(x) // rien à faire pour la console
+  #define REMPLITECRAN(x)
+  #define AFFICHE(x) Serial.print(x);
+  #define AFFICHELN(x) Serial.println(x)
+  #define POSITIONCURSEUR(x,y) Serial.print(";");
+  #define TAILLETEXTE(x)
+  #define COULEURTEXTE(x,y)
+  #define RETOURLIGNE(x) Serial.println(x)
+#endif
 
 
 //choix des pins de entrées TOR
@@ -195,10 +221,10 @@ pinMode(CAPTEURBANDE, INPUT); digitalWrite(CAPTEURBANDE, HIGH);
 pinMode(BATFAIBLE, OUTPUT); digitalWrite(BATFAIBLE, LOW);
 
 //initialisation de l'écran
-DEBUG_BEGIN(9600);
+Serial.begin(9600);
 DEBUG_PRINTLN("void setup lance");
-tft.initR(INITR_BLACKTAB); // initialisation de l'écran 1.8
-tft.fillScreen(ST7735_BLACK); // écran tout noir
+INITIALISEECRAN(INITR_BLACKTAB); // initialisation de l'écran 1.8
+REMPLITECRAN(ST7735_BLACK); // écran tout noir
 
 
 //récupération des paramètres rentrés précédemments, qui sont stockés dans l'EEPROM
@@ -222,53 +248,53 @@ DEBUG_PRINTLN(vs.totaliskm);
 if (digitalRead(UP) == LOW) {  //ça permet de passer par les écrans de paramétrage si UP est maintenu au démarrage
   
 //écran d'accueil :-) pour choix mode vectorino
-tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
-tft.setTextSize(2);
-tft.setCursor(0,0);
-tft.println(" VECTORINO");
-tft.println("   Mode?");
-tft.setCursor(0,130);
-tft.println(" puis 'OK'");
-tft.setTextSize(1);
-tft.setCursor(30,150);
-tft.println("v2.6-08/2018");
-tft.setTextSize(2);
+COULEURTEXTE(ST7735_MAGENTA,ST7735_BLACK);
+TAILLETEXTE(2);
+POSITIONCURSEUR(0,0);
+AFFICHELN(" VECTORINO");
+AFFICHELN("   Mode?");
+POSITIONCURSEUR(0,130);
+AFFICHELN(" puis 'OK'");
+TAILLETEXTE(1);
+POSITIONCURSEUR(30,150);
+AFFICHELN("v2.6-08/2018");
+TAILLETEXTE(2);
 
 while (digitalRead(RST) == HIGH) {
 
   if (vs.modevector==1) {
-tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
-tft.setCursor(0,45);
-tft.println(" ->Rallye");
-tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
-tft.setCursor(0,75);
-tft.println("   Piste");
-tft.setCursor(0,105);
-tft.println("   Route");
+COULEURTEXTE(ST7735_YELLOW,ST7735_BLACK);
+POSITIONCURSEUR(0,45);
+AFFICHELN(" ->Rallye");
+COULEURTEXTE(ST7735_MAGENTA,ST7735_BLACK);
+POSITIONCURSEUR(0,75);
+AFFICHELN("   Piste");
+POSITIONCURSEUR(0,105);
+AFFICHELN("   Route");
 
   }
      if (vs.modevector==2) {
-tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
-tft.setCursor(0,45);
-tft.println("   Rallye");
-tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
-tft.setCursor(0,75);
-tft.println(" ->Piste");
-tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
-tft.setCursor(0,105);
-tft.println("   Route");
+COULEURTEXTE(ST7735_MAGENTA,ST7735_BLACK);
+POSITIONCURSEUR(0,45);
+AFFICHELN("   Rallye");
+COULEURTEXTE(ST7735_YELLOW,ST7735_BLACK);
+POSITIONCURSEUR(0,75);
+AFFICHELN(" ->Piste");
+COULEURTEXTE(ST7735_MAGENTA,ST7735_BLACK);
+POSITIONCURSEUR(0,105);
+AFFICHELN("   Route");
 
   } 
 
      if (vs.modevector==3) {
-tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
-tft.setCursor(0,45);
-tft.println("   Rallye");
-tft.setCursor(0,75);
-tft.println("   Piste");
-tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
-tft.setCursor(0,105);
-tft.println(" ->Route");
+COULEURTEXTE(ST7735_MAGENTA,ST7735_BLACK);
+POSITIONCURSEUR(0,45);
+AFFICHELN("   Rallye");
+POSITIONCURSEUR(0,75);
+AFFICHELN("   Piste");
+COULEURTEXTE(ST7735_YELLOW,ST7735_BLACK);
+POSITIONCURSEUR(0,105);
+AFFICHELN(" ->Route");
 
   } 
 
@@ -282,30 +308,30 @@ tft.println(" ->Route");
 sauvegardeEEPROM(); //Stocke la valeur pour l'avoir au prochain redémarrage
 
 
-tft.fillScreen(ST7735_BLACK); // écran tout noir
+REMPLITECRAN(ST7735_BLACK); // écran tout noir
 
 //écran choix périmetre de roue
-tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
-tft.setCursor(0,10);
-tft.println(" perimetre");
-tft.println(" de roue?");
-tft.setCursor(55,50);
-tft.println(" cm");
-tft.setCursor(0,75);
-tft.println("  nombre");
-tft.println("d'aimants?");
-tft.setCursor(55,110);
-tft.println(vs.nbaimants);
-tft.setCursor(0,130);
-tft.println(" puis 'OK'");
-tft.setTextSize(1);
-tft.setCursor(30,150);
-tft.println("v2.6-08/2018");
-tft.setTextSize(2);
+COULEURTEXTE(ST7735_MAGENTA,ST7735_BLACK);
+POSITIONCURSEUR(0,10);
+AFFICHELN(" perimetre");
+AFFICHELN(" de roue?");
+POSITIONCURSEUR(55,50);
+AFFICHELN(" cm");
+POSITIONCURSEUR(0,75);
+AFFICHELN("  nombre");
+AFFICHELN("d'aimants?");
+POSITIONCURSEUR(55,110);
+AFFICHELN(vs.nbaimants);
+POSITIONCURSEUR(0,130);
+AFFICHELN(" puis 'OK'");
+TAILLETEXTE(1);
+POSITIONCURSEUR(30,150);
+AFFICHELN("v2.6-08/2018");
+TAILLETEXTE(2);
 
 //gestion du diamètre de roue : affichage et ajustement sur l'écran d'accueil
-tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
-while (digitalRead(RST) == HIGH) { tft.setCursor(25,50); sprintf(buffer, "%03d", vs.roue); tft.print(buffer); delay(100); //tant que j'appuie pas sur le bouton RST, je reste sur cet écran
+COULEURTEXTE(ST7735_YELLOW,ST7735_BLACK);
+while (digitalRead(RST) == HIGH) { POSITIONCURSEUR(25,50); sprintf(buffer, "%03d", vs.roue); AFFICHE(buffer); delay(100); //tant que j'appuie pas sur le bouton RST, je reste sur cet écran
   if (digitalRead(DWN) == LOW) {vs.roue--;}
   if (vs.roue<2) {vs.roue=1;}
   if (digitalRead(UP) == LOW) {vs.roue++;}
@@ -317,10 +343,10 @@ sauvegardeEEPROM(); //Stocke la valeur pour l'avoir au prochain redémarrage
 
 //gestion du choix nombre d'aimants
 delay(300);
-tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
-tft.setCursor(25,50); sprintf(buffer, "%03d", vs.roue); tft.print(buffer);
-tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
-while (digitalRead(RST) == HIGH) { tft.setCursor(55,110); sprintf(buffer, "%01d", vs.nbaimants); tft.print(buffer); delay(100); //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
+COULEURTEXTE(ST7735_MAGENTA,ST7735_BLACK);
+POSITIONCURSEUR(25,50); sprintf(buffer, "%03d", vs.roue); AFFICHE(buffer);
+COULEURTEXTE(ST7735_YELLOW,ST7735_BLACK);
+while (digitalRead(RST) == HIGH) { POSITIONCURSEUR(55,110); sprintf(buffer, "%01d", vs.nbaimants); AFFICHE(buffer); delay(100); //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
   if (digitalRead(DWN) == LOW) {vs.nbaimants--;}
   if (vs.nbaimants<2) {vs.nbaimants=1;}
   if (digitalRead(UP) == LOW) {vs.nbaimants++;}
@@ -330,26 +356,26 @@ while (digitalRead(RST) == HIGH) { tft.setCursor(55,110); sprintf(buffer, "%01d"
 sauvegardeEEPROM(); //Stocke la valeur pour l'avoir au prochain redémarrage
 
 
-tft.fillScreen(ST7735_BLACK); // écran tout noir
+REMPLITECRAN(ST7735_BLACK); // écran tout noir
 
 //écran choix coefficient correcteur de vitesse instantanée et max
-tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
-tft.setCursor(0,10);
-tft.println("Correction");
-tft.println("affichage");
-tft.println(" vitesse?");
-tft.setCursor(60,70);
-tft.println(" %");
-tft.setCursor(0,130);
-tft.println(" puis 'OK'");
-tft.setTextSize(1);
-tft.setCursor(30,150);
-tft.println("v2.6-08/2018");
-tft.setTextSize(2);
+COULEURTEXTE(ST7735_MAGENTA,ST7735_BLACK);
+POSITIONCURSEUR(0,10);
+AFFICHELN("Correction");
+AFFICHELN("affichage");
+AFFICHELN(" vitesse?");
+POSITIONCURSEUR(60,70);
+AFFICHELN(" %");
+POSITIONCURSEUR(0,130);
+AFFICHELN(" puis 'OK'");
+TAILLETEXTE(1);
+POSITIONCURSEUR(30,150);
+AFFICHELN("v2.6-08/2018");
+TAILLETEXTE(2);
 
 //gestion du coef correcteur de vitesse : affichage et ajustement sur l'écran d'accueil
-tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
-while (digitalRead(RST) == HIGH) { tft.setCursor(30,70); sprintf(buffer, "%03d", vs.correcv); tft.print(buffer); delay(100); //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
+COULEURTEXTE(ST7735_YELLOW,ST7735_BLACK);
+while (digitalRead(RST) == HIGH) { POSITIONCURSEUR(30,70); sprintf(buffer, "%03d", vs.correcv); AFFICHE(buffer); delay(100); //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
   if (digitalRead(DWN) == LOW) {vs.correcv--;}
   if (vs.correcv<=50) {vs.correcv=50;}
   if (digitalRead(UP) == LOW) {vs.correcv++;}
@@ -362,25 +388,25 @@ sauvegardeEEPROM(); //Stocke la valeur pour l'avoir au prochain redémarrage
 
 if (vs.modevector == 2) {
 //écran d'accueil choix bandes magnétiques si mode alfano
-tft.fillScreen(ST7735_BLACK); // écran tout noir
-tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
-tft.setCursor(0,0);
-tft.println();
-tft.println("Mode piste");
-tft.println();
-tft.println(" combien");
-tft.println("de bandes?");
-tft.setCursor(30,100);
-tft.println("bande(s)");
-tft.setCursor(0,130);
-tft.println(" puis 'OK'");
-tft.setTextSize(1);
-tft.setCursor(30,150);
-tft.println("v2.6-08/2018");
-tft.setTextSize(2);
+REMPLITECRAN(ST7735_BLACK); // écran tout noir
+COULEURTEXTE(ST7735_MAGENTA,ST7735_BLACK);
+POSITIONCURSEUR(0,0);
+AFFICHELN();
+AFFICHELN("Mode piste");
+AFFICHELN();
+AFFICHELN(" combien");
+AFFICHELN("de bandes?");
+POSITIONCURSEUR(30,100);
+AFFICHELN("bande(s)");
+POSITIONCURSEUR(0,130);
+AFFICHELN(" puis 'OK'");
+TAILLETEXTE(1);
+POSITIONCURSEUR(30,150);
+AFFICHELN("v2.6-08/2018");
+TAILLETEXTE(2);
 //gestion du nombre de bandes : affichage et ajustement sur l'écran d'accueil
-tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
-while (digitalRead(RST) == HIGH) { tft.setCursor(10,100); tft.print(vs.nbbandes); delay(100); //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
+COULEURTEXTE(ST7735_YELLOW,ST7735_BLACK);
+while (digitalRead(RST) == HIGH) { POSITIONCURSEUR(10,100); AFFICHE(vs.nbbandes); delay(100); //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
   if (digitalRead(DWN) == LOW) {vs.nbbandes--;}
   if (digitalRead(UP) == LOW) {vs.nbbandes++;}
   if (vs.nbbandes<=1) {vs.nbbandes=1;}
@@ -392,43 +418,43 @@ sauvegardeEEPROM(); //Stocke la valeur pour l'avoir au prochain redémarrage
 
 
 //écran d'accueil reset de tous les chronos
-tft.fillScreen(ST7735_BLACK); // écran tout noir
-tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
-tft.setCursor(0,0);
-tft.println();
-tft.println("Mode piste");
-tft.println();
-tft.println(" Effacer");
-tft.println(" chronos?");
-tft.setCursor(45,85);
-tft.println("OUI");
-tft.setCursor(45,105);
-tft.println("NON");
-tft.setCursor(0,130);
-tft.println(" puis 'OK'");
-tft.setTextSize(1);
-tft.setCursor(30,150);
-tft.println("v2.6-08/2018");
-tft.setTextSize(2);
+REMPLITECRAN(ST7735_BLACK); // écran tout noir
+COULEURTEXTE(ST7735_MAGENTA,ST7735_BLACK);
+POSITIONCURSEUR(0,0);
+AFFICHELN();
+AFFICHELN("Mode piste");
+AFFICHELN();
+AFFICHELN(" Effacer");
+AFFICHELN(" chronos?");
+POSITIONCURSEUR(45,85);
+AFFICHELN("OUI");
+POSITIONCURSEUR(45,105);
+AFFICHELN("NON");
+POSITIONCURSEUR(0,130);
+AFFICHELN(" puis 'OK'");
+TAILLETEXTE(1);
+POSITIONCURSEUR(30,150);
+AFFICHELN("v2.6-08/2018");
+TAILLETEXTE(2);
 
 while (digitalRead(RST) == HIGH) {
 
   if (effachrono==HIGH) {
-  tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
-  tft.setCursor(45,85);
-  tft.println("OUI");
-  tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
-  tft.setCursor(45,105);
-  tft.println("NON");
+  COULEURTEXTE(ST7735_YELLOW,ST7735_BLACK);
+  POSITIONCURSEUR(45,85);
+  AFFICHELN("OUI");
+  COULEURTEXTE(ST7735_MAGENTA,ST7735_BLACK);
+  POSITIONCURSEUR(45,105);
+  AFFICHELN("NON");
   }
 
   if (effachrono==LOW) {
-  tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
-  tft.setCursor(45,85);
-  tft.println("OUI");
-  tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
-  tft.setCursor(45,105);
-  tft.println("NON");
+  COULEURTEXTE(ST7735_MAGENTA,ST7735_BLACK);
+  POSITIONCURSEUR(45,85);
+  AFFICHELN("OUI");
+  COULEURTEXTE(ST7735_YELLOW,ST7735_BLACK);
+  POSITIONCURSEUR(45,105);
+  AFFICHELN("NON");
   }
 
   if (digitalRead(UP) == LOW) { effachrono=HIGH;}
@@ -454,28 +480,28 @@ if (vs.modevector == 3) {
 
 //écran choix valeur totalisateur
 
-tft.fillScreen(ST7735_BLACK); // écran tout noir
+REMPLITECRAN(ST7735_BLACK); // écran tout noir
 
-tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
-tft.setCursor(0,10);
-tft.println("kilometres");
-tft.println("totaux?");
-tft.setCursor(85,70);
-tft.println("km");
-tft.setCursor(0,130);
-tft.println(" puis 'OK'");
-tft.setTextSize(1);
-tft.setCursor(30,150);
-tft.println("v2.6-08/2018");
-tft.setTextSize(2);
+COULEURTEXTE(ST7735_MAGENTA,ST7735_BLACK);
+POSITIONCURSEUR(0,10);
+AFFICHELN("kilometres");
+AFFICHELN("totaux?");
+POSITIONCURSEUR(85,70);
+AFFICHELN("km");
+POSITIONCURSEUR(0,130);
+AFFICHELN(" puis 'OK'");
+TAILLETEXTE(1);
+POSITIONCURSEUR(30,150);
+AFFICHELN("v2.6-08/2018");
+TAILLETEXTE(2);
 
 
 //gestion du totalisateur : affichage et ajustement sur l'écran d'accueil
-tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
+COULEURTEXTE(ST7735_YELLOW,ST7735_BLACK);
 while (digitalRead(RST) == HIGH) { //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
   afftotalismkm = (vs.totaliskm/1000);
   afftotaliskm = (vs.totaliskm-afftotalismkm*1000);
-    tft.setCursor(15,70); sprintf(buffer, "%02d", afftotalismkm); tft.print(buffer); sprintf(buffer, "%03d", afftotaliskm); tft.print(buffer); delay(100); 
+    POSITIONCURSEUR(15,70); sprintf(buffer, "%02d", afftotalismkm); AFFICHE(buffer); sprintf(buffer, "%03d", afftotaliskm); AFFICHE(buffer); delay(100); 
   if (digitalRead(DWN) == LOW) {(vs.totaliskm=(vs.totaliskm-100));}
   if (vs.totaliskm<100) {vs.totaliskm=100;}
   if (digitalRead(UP) == LOW) {(vs.totaliskm=(vs.totaliskm+100));}
@@ -494,24 +520,24 @@ sauvegardeEEPROM(); //Stocke la valeur pour l'avoir au prochain redémarrage
 
 if (vs.modevector == 1) {
 
-tft.fillScreen(ST7735_BLACK); // écran tout noir
+REMPLITECRAN(ST7735_BLACK); // écran tout noir
 //affichage des inscriptions constantes
-tft.setTextColor(ST7735_BLUE,ST7735_BLACK); // choix couleur écriture des inscriptions constantes
-tft.setTextSize(2);
-tft.setCursor(50,10);
-tft.print("km");
-tft.setCursor(50,47);
-tft.print("mn");
-tft.setCursor(75,84);
-tft.print("kmh");
-tft.setCursor(75,121);
-tft.print("kmh~");
-tft.setCursor(0,145);
-tft.print("Max");
-tft.setCursor(75,145);
-tft.print("kmh");
-tft.setTextSize(4);
-tft.setTextColor(ST7735_YELLOW,ST7735_BLACK); // choix couleur écriture des inscriptions variables
+COULEURTEXTE(ST7735_BLUE,ST7735_BLACK); // choix couleur écriture des inscriptions constantes
+TAILLETEXTE(2);
+POSITIONCURSEUR(50,10);
+AFFICHE("km");
+POSITIONCURSEUR(50,47);
+AFFICHE("mn");
+POSITIONCURSEUR(75,84);
+AFFICHE("kmh");
+POSITIONCURSEUR(75,121);
+AFFICHE("kmh~");
+POSITIONCURSEUR(0,145);
+AFFICHE("Max");
+POSITIONCURSEUR(75,145);
+AFFICHE("kmh");
+TAILLETEXTE(4);
+COULEURTEXTE(ST7735_YELLOW,ST7735_BLACK); // choix couleur écriture des inscriptions variables
 //penser a choisir écriture sur fond de meme couleur que le fond de départ
 }
 
@@ -520,29 +546,29 @@ tft.setTextColor(ST7735_YELLOW,ST7735_BLACK); // choix couleur écriture des ins
 
 if (vs.modevector == 2) {
 
-tft.fillScreen(ST7735_BLACK); // écran tout noir
+REMPLITECRAN(ST7735_BLACK); // écran tout noir
 
 //affichage des inscriptions constantes
-tft.setTextColor(ST7735_BLUE,ST7735_BLACK); // choix couleur écriture des inscriptions constantes
-tft.setTextSize(2);
-tft.setCursor(18,0);
-tft.print("'");
-tft.setCursor(70,0);
-tft.print("''");
-tft.setCursor(18,38);
-tft.print("'");
-tft.setCursor(70,38);
-tft.print("'");
-tft.setCursor(75,76);
-tft.print("kmh");
-tft.setCursor(75,114);
-tft.print("kmh");
-tft.setCursor(75,126);
-tft.print("max");
-tft.setCursor(0,144);
-tft.print("tour #");
-tft.setTextSize(4);
-tft.setTextColor(ST7735_YELLOW,ST7735_BLACK); // choix couleur écriture des inscriptions variables
+COULEURTEXTE(ST7735_BLUE,ST7735_BLACK); // choix couleur écriture des inscriptions constantes
+TAILLETEXTE(2);
+POSITIONCURSEUR(18,0);
+AFFICHE("'");
+POSITIONCURSEUR(70,0);
+AFFICHE("''");
+POSITIONCURSEUR(18,38);
+AFFICHE("'");
+POSITIONCURSEUR(70,38);
+AFFICHE("'");
+POSITIONCURSEUR(75,76);
+AFFICHE("kmh");
+POSITIONCURSEUR(75,114);
+AFFICHE("kmh");
+POSITIONCURSEUR(75,126);
+AFFICHE("max");
+POSITIONCURSEUR(0,144);
+AFFICHE("tour #");
+TAILLETEXTE(4);
+COULEURTEXTE(ST7735_YELLOW,ST7735_BLACK); // choix couleur écriture des inscriptions variables
 //penser a choisir écriture sur fond de meme couleur que le fond de départ
 
 }
@@ -552,24 +578,24 @@ tft.setTextColor(ST7735_YELLOW,ST7735_BLACK); // choix couleur écriture des ins
 
 if (vs.modevector == 3) {
 
-tft.fillScreen(ST7735_BLACK); // écran tout noir
+REMPLITECRAN(ST7735_BLACK); // écran tout noir
 
 //affichage des inscriptions constantes
-tft.setTextColor(ST7735_BLUE,ST7735_BLACK); // choix couleur écriture des inscriptions constantes
-tft.setTextSize(2);
-tft.setCursor(75,55);
-tft.print("km/h");
-tft.setCursor(62,80);
-tft.print(".  km");
-tft.setCursor(98,120);
-tft.print("km");
-tft.setCursor(80,100);
-tft.setTextSize(1);
-tft.print("partiel");
-tft.setCursor(93,140);
-tft.print("total");
-tft.setTextSize(4);
-tft.setTextColor(ST7735_YELLOW,ST7735_BLACK); // choix couleur écriture des inscriptions variables
+COULEURTEXTE(ST7735_BLUE,ST7735_BLACK); // choix couleur écriture des inscriptions constantes
+TAILLETEXTE(2);
+POSITIONCURSEUR(75,55);
+AFFICHE("km/h");
+POSITIONCURSEUR(62,80);
+AFFICHE(".  km");
+POSITIONCURSEUR(98,120);
+AFFICHE("km");
+POSITIONCURSEUR(80,100);
+TAILLETEXTE(1);
+AFFICHE("partiel");
+POSITIONCURSEUR(93,140);
+AFFICHE("total");
+TAILLETEXTE(4);
+COULEURTEXTE(ST7735_YELLOW,ST7735_BLACK); // choix couleur écriture des inscriptions variables
 //penser a choisir écriture sur fond de meme couleur que le fond de départ
 
 }
@@ -636,12 +662,12 @@ void affiche_chrono_et_tour() { //pour afficher le top chrono en cours et le nom
   affmin = (topchrono/6000); //affmin étant un entier, la division ne donne que les minutes pleines
   affsec = ((topchrono-affmin*6000)/100); //pour n'avoir que les secondes, je prends le temps total moins les minutes pleines x 60.
   affcent = (topchrono-((affmin*6000)+(affsec*100))); //et rebelotte pour avoir les centiemes
-  tft.setCursor(0,38); sprintf(buffer, "%01d", affmin); tft.print(buffer);
-  tft.setCursor(27,38); sprintf(buffer, "%02d", affsec); tft.print(buffer);
-  tft.setCursor(79,38); sprintf(buffer, "%02d", affcent); tft.print(buffer);
-  tft.setTextSize(2);
-  tft.setCursor(80,144); sprintf(buffer, "%02d", vs.tours); tft.print(buffer);
-  tft.setTextSize(4);
+  POSITIONCURSEUR(0,38); sprintf(buffer, "%01d", affmin); AFFICHE(buffer);
+  POSITIONCURSEUR(27,38); sprintf(buffer, "%02d", affsec); AFFICHE(buffer);
+  POSITIONCURSEUR(79,38); sprintf(buffer, "%02d", affcent); AFFICHE(buffer);
+  TAILLETEXTE(2);
+  POSITIONCURSEUR(80,144); sprintf(buffer, "%02d", vs.tours); AFFICHE(buffer);
+  TAILLETEXTE(4);
   
 }
 }
@@ -685,26 +711,26 @@ if (vs.cm <= 0) {vs.cm = 0; cmavant = vs.cm;} //pour que la correction en moins 
 if (vs.cm > 9990000) {vs.cm = 0; cmavant = vs.cm;} //la distance retombe a zéro au dela de 99km90. pour éviter les bugs d'affichage
 affkm = vs.cm/100000;
 affm = (vs.cm-affkm*100000)/1000;
-tft.setCursor(0,0); sprintf(buffer, "%02d", affkm); tft.print(buffer);
-tft.setCursor(78,0); sprintf(buffer, "%02d", affm); tft.print(buffer);
+POSITIONCURSEUR(0,0); sprintf(buffer, "%02d", affkm); AFFICHE(buffer);
+POSITIONCURSEUR(78,0); sprintf(buffer, "%02d", affm); AFFICHE(buffer);
 
 //affiche vitesse moyenne
 if ((vs.cm<2000)||(tps<2)) {vmoy = 0;} //maintient la vmoy a 0 avant les 20 premiers metres, ou 2sec après reset ou démarrage, pour éviter valeurs bidons.
 else { vmoy = ((vs.cm/((millis()/1000)-tpsinit))*3600/100000);} //basé sur l'afficheur de distance. se réinitialise en même temps.
 if (vmoy > 400) {vmoy=400;} //maintient la vmoy a 400 si trop élevée pour éviter les valeurs bidon
-tft.setCursor(0,111); sprintf(buffer, "%03d", vmoy); tft.print(buffer);
+POSITIONCURSEUR(0,111); sprintf(buffer, "%03d", vmoy); AFFICHE(buffer);
 
 //affichage minuterie
 tps = ((millis()/1000)-tpsinit); //temps depuis reset
 if (tps > 5940) {tps = 0;} //si le temps dépasse 99min, il repasse a zero, c'est juste pour éviter les bugs d'affichage
 affmin = (tps/60); //affmin étant un entier, la division ne donne que les minutes pleines
 affsec = (tps-affmin*60); //pour n'avoir que les secondes, je prends le temps total moins les minutes pleines x 60.
-tft.setCursor(0,37); sprintf(buffer, "%02d", affmin); tft.print(buffer);
-tft.setCursor(78,37); sprintf(buffer, "%02d", affsec); tft.print(buffer);
+POSITIONCURSEUR(0,37); sprintf(buffer, "%02d", affmin); AFFICHE(buffer);
+POSITIONCURSEUR(78,37); sprintf(buffer, "%02d", affsec); AFFICHE(buffer);
 
 //affichage vitesse instantanée
 if ((millis())-2000<j) { //si délai inférieur a 2 sec, j'affiche la vitesse, si au dela, je recalcule la vitesse et réinitialise le temps
-  tft.setCursor(0,74); sprintf(buffer, "%03d", vinstant); tft.print(buffer);}
+  POSITIONCURSEUR(0,74); sprintf(buffer, "%03d", vinstant); AFFICHE(buffer);}
 else {
   vinstant = (vs.cm*36*vs.correcv-cmavant*36*vs.correcv); //la formule était vinstant = ((((cm-cmavant)*3600)/100000)*correcv/100) mais modifiée pour faire la division après pour garder la précision
   vinstant = vinstant/200000; //ça équivaut à un calcul de moyenne sur les 2 dernières secondes
@@ -714,9 +740,9 @@ else {
 
 //affichage vmax
   if (vinstant > vmax) {vmax = vinstant;} //la Vmax se met a jour quand la Vinstant la dépasse
-  tft.setTextSize(2);
-  tft.setCursor(35,145); sprintf(buffer, "%03d", vmax); tft.print(buffer);
-  tft.setTextSize(4);
+  TAILLETEXTE(2);
+  POSITIONCURSEUR(35,145); sprintf(buffer, "%03d", vmax); AFFICHE(buffer);
+  TAILLETEXTE(4);
 
 
 }
@@ -741,14 +767,14 @@ if (digitalRead(RST) == LOW) {
 
 //affichage chrono en cours
 if (depart == HIGH) { tps = 0;
-tft.setCursor(0,0); tft.print("!"); tft.setCursor(27,0); tft.print("GO"); tft.setCursor(79,0); tft.print("!!");} //si on est en mode départ, on affiche "GO"
+POSITIONCURSEUR(0,0); AFFICHE("!"); POSITIONCURSEUR(27,0); AFFICHE("GO"); POSITIONCURSEUR(79,0); AFFICHE("!!");} //si on est en mode départ, on affiche "GO"
 else {tps = ((millis()/10)-tpsinit); //si on est pas en mode départ, on calcule le temps depuis reset chrono (en centiemes de sec)
 affmin = (tps/6000); //affmin étant un entier, la division ne donne que les minutes pleines
 affsec = ((tps-affmin*6000)/100); //pour n'avoir que les secondes, je prends le temps total moins les minutes pleines x 60.
 affcent = (tps-((affmin*6000)+(affsec*100))); //et rebelotte pour avoir les centiemes
-tft.setCursor(0,0); sprintf(buffer, "%01d", affmin); tft.print(buffer);
-tft.setCursor(27,0); sprintf(buffer, "%02d", affsec); tft.print(buffer);
-tft.setCursor(79,0); sprintf(buffer, "%02d", affcent); tft.print(buffer);}
+POSITIONCURSEUR(0,0); sprintf(buffer, "%01d", affmin); AFFICHE(buffer);
+POSITIONCURSEUR(27,0); sprintf(buffer, "%02d", affsec); AFFICHE(buffer);
+POSITIONCURSEUR(79,0); sprintf(buffer, "%02d", affcent); AFFICHE(buffer);}
 
 // la détection de fin de tour est faite par le signal "capteurbande" mais peut etre fait à la main par le bouton "up" grace a ça :
 if (digitalRead(UP) == LOW) { resettour(); }
@@ -758,7 +784,7 @@ if (tps > 59900) { tpsinit = (millis()/10); }
 
 //affichage vitesse instantanée
 if ((millis())-2000<j) { //si délai inférieur a 2 sec, j'affiche la vitesse, si au dela, je recalcule la vitesse et réinitialise le temps
-  tft.setCursor(0,76); sprintf(buffer, "%03d", vinstant); tft.print(buffer);}
+  POSITIONCURSEUR(0,76); sprintf(buffer, "%03d", vinstant); AFFICHE(buffer);}
 else {
   vinstant = (vs.cm*36*vs.correcv-cmavant*36*vs.correcv); //la formule était vinstant = ((((cm-cmavant)*3600)/100000)*correcv/100) mais modifiée pour faire la division après pour garder la précision
   vinstant = vinstant/200000; //ça équivaut à un calcul de moyenne sur les 2 dernières secondes
@@ -770,16 +796,16 @@ else {
 //affichage vmax
 if (vinstant > vmax) {vmax = vinstant;} //la Vmax se met a jour quand la Vinstant la dépasse mais celle-ci est mise a zero avec "resettour"
 if (vmax > vmaxabsolue) {vmaxabsolue = vmax;} //la Vmaxabsolue se met a jour quand la Vinstant la dépasse
-tft.setCursor(0,114); sprintf(buffer, "%03d", vmaxabsolue); tft.print(buffer);
+POSITIONCURSEUR(0,114); sprintf(buffer, "%03d", vmaxabsolue); AFFICHE(buffer);
 
 //passage en mode lecture
 if (digitalRead(DWN) == LOW) { modelecture = HIGH; afftour = vs.tours; }
 
 while (modelecture == HIGH) {
-  tft.setCursor(0,0); tft.print("-");
-  tft.setCursor(27,0); tft.print("--");
-  tft.setCursor(79,0); tft.print("--");
-  tft.setCursor(0,76); tft.print("---");
+  POSITIONCURSEUR(0,0); AFFICHE("-");
+  POSITIONCURSEUR(27,0); AFFICHE("--");
+  POSITIONCURSEUR(79,0); AFFICHE("--");
+  POSITIONCURSEUR(0,76); AFFICHE("---");
   if (digitalRead(UP) == LOW) { afftour++;}
   if (afftour>80) {afftour = 1;}
   if (digitalRead(DWN) == LOW) { afftour--;}
@@ -791,13 +817,13 @@ while (modelecture == HIGH) {
   affcent = (chrono-((affmin*6000)+(affsec*100))); //pour afficher le chrono correspondant au tour sélectionné
   EEPROM.get((afftour*10+5),affvmax);
   if ((affvmax<2) || (affvmax>400)) {affvmax=0;} //pour forcer l'affichage d'une vmax a zero si valeur irréaliste
-  tft.setCursor(0,38); sprintf(buffer, "%01d", affmin); tft.print(buffer);
-  tft.setCursor(27,38); sprintf(buffer, "%02d", affsec); tft.print(buffer);
-  tft.setCursor(79,38); sprintf(buffer, "%02d", affcent); tft.print(buffer);
-  tft.setTextSize(2);
-  tft.setCursor(80,144); sprintf(buffer, "%02d", afftour); tft.print(buffer); //pour affichage du numéro du tour concerné
-  tft.setTextSize(4);
-  tft.setCursor(0,114); sprintf(buffer, "%03d", affvmax); tft.print(buffer); //pour affichage de la vmax correspondante a ce tour
+  POSITIONCURSEUR(0,38); sprintf(buffer, "%01d", affmin); AFFICHE(buffer);
+  POSITIONCURSEUR(27,38); sprintf(buffer, "%02d", affsec); AFFICHE(buffer);
+  POSITIONCURSEUR(79,38); sprintf(buffer, "%02d", affcent); AFFICHE(buffer);
+  TAILLETEXTE(2);
+  POSITIONCURSEUR(80,144); sprintf(buffer, "%02d", afftour); AFFICHE(buffer); //pour affichage du numéro du tour concerné
+  TAILLETEXTE(4);
+  POSITIONCURSEUR(0,114); sprintf(buffer, "%03d", affvmax); AFFICHE(buffer); //pour affichage de la vmax correspondante a ce tour
     
   if (digitalRead(RST) == LOW) {
     delay(300); //délai pour éviter de sortir du mode lecture et faire un reset involontaire dans la foulée
@@ -815,7 +841,7 @@ while (modelecture == HIGH) {
 
 if (vs.modevector == 3) {
 
-tft.setTextSize(3);
+TAILLETEXTE(3);
 
 //gestion du reset
 if (digitalRead(RST) == LOW) {vs.cm = 0; cmavant = vs.cm;} //reset le trip
@@ -824,19 +850,19 @@ if (digitalRead(RST) == LOW) {vs.cm = 0; cmavant = vs.cm;} //reset le trip
 if (vs.cm > 99900000) {vs.cm = 0;} //la distance retombe a zéro au dela de 999.0km. pour éviter les bugs d'affichage
 affkm = vs.cm/100000;
 affm = (vs.cm-affkm*100000)/10000;
-tft.setCursor(10,75); sprintf(buffer, "%03d", affkm); tft.print(buffer);
-tft.setCursor(75,75); sprintf(buffer, "%01d", affm); tft.print(buffer);
+POSITIONCURSEUR(10,75); sprintf(buffer, "%03d", affkm); AFFICHE(buffer);
+POSITIONCURSEUR(75,75); sprintf(buffer, "%01d", affm); AFFICHE(buffer);
 
 //affichage du totalisateur
 afftotalismkm = (vs.totaliskm/1000);
 afftotaliskm = (vs.totaliskm-afftotalismkm*1000);
-tft.setCursor(5,115); sprintf(buffer, "%02d", afftotalismkm); tft.print(buffer); sprintf(buffer, "%03d", afftotaliskm); tft.print(buffer); //obligé de bidouiller car capacité buffer<32700km
+POSITIONCURSEUR(5,115); sprintf(buffer, "%02d", afftotalismkm); AFFICHE(buffer); sprintf(buffer, "%03d", afftotaliskm); AFFICHE(buffer); //obligé de bidouiller car capacité buffer<32700km
 
 
 //affichage vitesse instantanée
-tft.setTextSize(7);
+TAILLETEXTE(7);
 if ((millis())-2000<j) { //si délai inférieur a 2 sec, j'affiche la vitesse, si au dela, je recalcule la vitesse et réinitialise le temps
-  tft.setCursor(0,0); sprintf(buffer, "%03d", vinstant); tft.print(buffer);}
+  POSITIONCURSEUR(0,0); sprintf(buffer, "%03d", vinstant); AFFICHE(buffer);}
 else {
   vinstant = (vs.cm*36*vs.correcv-cmavant*36*vs.correcv); //la formule était vinstant = ((((cm-cmavant)*3600)/100000)*correcv/100) mais modifiée pour faire la division après pour garder la précision
   vinstant = vinstant/200000; //ça équivaut à un calcul de moyenne sur les 2 dernières secondes
@@ -848,7 +874,7 @@ else {
 
 }
 
-
+RETOURLIGNE();
 
 }
 
