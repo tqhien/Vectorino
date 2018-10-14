@@ -79,6 +79,20 @@
 //bibliothèque pour l'accès a la mémoire EEPROM (mémoire conservée à l'extinction de l'arduino)
 #include <EEPROM.h>
 
+//Macro d'activation ou non des messages de débogage dans la console
+//#define DEBUG // décommenter si on veut l'affichage des messages de debug
+
+// Affiche ou non les messages de debogage
+#ifdef DEBUG
+  #define DEBUG_BEGIN(x) Serial.begin(x)
+  #define DEBUG_PRINTLN(x) Serial.println(x)
+  #define DEBUG_PRINT(x) Serial.print(x)
+#else // pas de débogage, on le définit donc rien pour les appels à DEBUG_*
+  #define DEBUG_BEGIN(x)
+  #define DEBUG_PRINTLN(x)
+  #define DEBUG_PRINT(x)
+#endif
+
 //bibliothèques pour écran ST7735
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library
@@ -181,8 +195,8 @@ pinMode(CAPTEURBANDE, INPUT); digitalWrite(CAPTEURBANDE, HIGH);
 pinMode(BATFAIBLE, OUTPUT); digitalWrite(BATFAIBLE, LOW);
 
 //initialisation de l'écran
-Serial.begin(9600);
-Serial.println("void setup lance");
+DEBUG_BEGIN(9600);
+DEBUG_PRINTLN("void setup lance");
 tft.initR(INITR_BLACKTAB); // initialisation de l'écran 1.8
 tft.fillScreen(ST7735_BLACK); // écran tout noir
 
@@ -192,13 +206,13 @@ chargeEEPROM();
 
 
 //juste en mode codage pour voir les valeurs qui remontent via le moniteur serie
-Serial.println("recup des données EEPROM lance");
-Serial.println(vs.modevector);
-Serial.println(vs.roue);
-Serial.println(vs.nbaimants);
-Serial.println(vs.nbbandes);
-Serial.println(vs.correcv);
-Serial.println(vs.totaliskm);
+DEBUG_PRINTLN("recup des données EEPROM lance");
+DEBUG_PRINTLN(vs.modevector);
+DEBUG_PRINTLN(vs.roue);
+DEBUG_PRINTLN(vs.nbaimants);
+DEBUG_PRINTLN(vs.nbbandes);
+DEBUG_PRINTLN(vs.correcv);
+DEBUG_PRINTLN(vs.totaliskm);
 
 
 
@@ -582,7 +596,7 @@ attachInterrupt(digitalPinToInterrupt(CAPTEURBANDE), resettour, FALLING);
 //affiche le chrono vierge au départ en mode alfano (sans ça l'affichage n'apparait pas tant qu'il y a pas eu de "capteur bande"
 if (vs.modevector == 2) {affiche_chrono_et_tour();}
 
-Serial.println("fin de void setup");
+DEBUG_PRINTLN("fin de void setup");
 }
 
 //routine appelée par l'interruption déclenchée par le front montant de capteur de roue
@@ -636,7 +650,7 @@ void affiche_chrono_et_tour() { //pour afficher le top chrono en cours et le nom
 
 void loop() {
 
-Serial.println("void loop lance");
+DEBUG_PRINTLN("void loop lance");
 
 //SURVEILLANCE DE LA TENSION DE LA BATTERIE POUR ALLUMAGE LED BATTERIE FAIBLE
 if (analogRead(VOLTBAT) < 760) { digitalWrite(BATFAIBLE, HIGH);}
@@ -851,14 +865,14 @@ void chargeEEPROM () {
   // Lit la mémoire EEPROM
   EEPROM.get(900, vs);
   
-  Serial.println("Vérification eeprom");
+  DEBUG_PRINTLN("Vérification eeprom");
   // Détection d'une mémoire non initialisée
   byte erreur = vs.magic != STRUCT_MAGIC;
 
   // Valeurs par défaut struct_version == 0
   if (erreur) {
 
-    Serial.println("eeprom non initialisée, Sauvegarde des valeurs par défaut");
+    DEBUG_PRINTLN("eeprom non initialisée, Sauvegarde des valeurs par défaut");
     // Valeurs par défaut pour les variables de la version 0
     vs.modevector = 1;
     vs.roue = 186 ;
