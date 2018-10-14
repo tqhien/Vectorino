@@ -3,18 +3,18 @@
 
 #include <EEPROM.h>
 
-unsigned int modevector = 1; //mode rallye par défaut
-unsigned int roue = 188; 
-unsigned int nbaimants = 2;
-unsigned int nbbandes = 1;
-unsigned int correcv = 95;
+byte modevector = 1; //mode rallye par défaut
+unsigned int roue = 186; 
+byte nbaimants = 1;
+byte nbbandes = 1;
+byte correcv = 95;
 unsigned long totaliskm = 10000;
 unsigned long tps = 0;
 unsigned int vmax = 0;
 long cm = 0;
-unsigned int tours = 1; 
+byte tours = 1; 
 
-int q=1;
+byte q=1;
 
 void setup() {
   // put your setup code here, to run once:

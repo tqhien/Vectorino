@@ -93,15 +93,15 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS,  TFT_DC, TFT_RST);
 
 
 //choix des pins de entrées TOR
-const int up = 6; //bouton UP
-const int dwn =7; //bouton DOWN
-const int capteur = 2; //capteur de roue DOIT ETRE SUR PIN 2 CAR GERE PAR ROUTINE INTERRUPT
-const int capteurbande = 3; //capteur de bande magnétique circuit DOIT ETRE SUR PIN 3 CAR GERE PAR ROUTINE INTERRUPT
+#define UP 6 //bouton UP
+#define DWN 7 //bouton DOWN
+#define CAPTEUR 2 //capteur de roue DOIT ETRE SUR PIN 2 CAR GERE PAR ROUTINE INTERRUPT
+#define CAPTEURBANDE 3 //capteur de bande magnétique circuit DOIT ETRE SUR PIN 3 CAR GERE PAR ROUTINE INTERRUPT
 //choix des pins entrée ANA
-const char rst = A1; //bouton rst rentre sur un pin analogique utilisé comme un digital,  car plus de place en pin digital
-const int voltbat = 0; //retour tension batterie sur pin A0
+#define RST A1 //bouton rst rentre sur un pin analogique utilisé comme un digital,  car plus de place en pin digital
+#define VOLTBAT 0 //retour tension batterie sur pin A0
 //choix des pins de sortie TOR
-const int batfaible = 5; //pin de la LED batterie faible (devient 5 etait 4 dans version précédente)
+#define BATFAIBLE 5 //pin de la LED batterie faible (devient 5 etait 4 dans version précédente)
 
 //déclaration et initialisation des variables
 long cm = 0; //distance parcourue en cm
@@ -113,7 +113,7 @@ unsigned long topchrono = 0 ; //meilleur chrono absolu depuis le reset
 unsigned int affmin = 0 ; //pour affichage min
 unsigned int affsec = 0 ; //pour affichage sec
 unsigned int affcent = 0 ; //pour affichage centiemes
-unsigned int roue = 186 ; //diametre roue    VALEUR PAR DEFAUT (mesurée sur la ktm, sur roue avant en 17"). AJUSTEE PAR ECRAN D'ACCUEIL
+byte roue = 186 ; //diametre roue    VALEUR PAR DEFAUT (mesurée sur la ktm, sur roue avant en 17"). AJUSTEE PAR ECRAN D'ACCUEIL
 unsigned long j = millis() ; //compteur pour calcul vitesse instantanée
 unsigned long k = millis() ; //compteur pour calcul vitesse max
 unsigned long cmavant = 0 ; //relevé de distance pour calcul vitesse
@@ -127,19 +127,19 @@ boolean modelecture = LOW ; //pour gérer mode lecture / mode enregistrement
 unsigned long chrono = 0 ; //pour enregistrement des chronos des tours effectués
 unsigned int afftour = 1 ; //pour choisir le tour affiché en mode lecture
 unsigned int affvmax = 0; //pour enregistrement des vmax des tours effectués
-unsigned int nbbandes = 1; //pour choix du nombre de bandes magnétiques sur le circuit
+byte nbbandes = 1; //pour choix du nombre de bandes magnétiques sur le circuit
 unsigned int passagebande = 0; //compte le nombre de passage sur la bande avant de valider le tour
 unsigned long filtre = millis() ; //pour filtrer la lecture capteur de bande
 boolean depart = HIGH; //pour empécher l'enregistrement du topchrono au premier passage ou après un reset
-unsigned int modevector = 0; //pour choix entre alfano ou vector ou strino
-unsigned int nbaimants = 2; //pour choix du nombre de bandes magnétiques sur le circuit
-unsigned int correcv = 95; //coefficient correcteur de l'affichage vitesse
+byte modevector = 0; //pour choix entre alfano ou vector ou strino
+byte nbaimants = 2; //pour choix du nombre de bandes magnétiques sur le circuit
+byte correcv = 95; //coefficient correcteur de l'affichage vitesse
 unsigned long totalis = 0 ; //pour mise a jour du totalisateur km
 unsigned long totaliskm = 10000; //totalisateur km
 unsigned int afftotalismkm = 0; //créé cause bug affichage avec les km qui dépassent 32700 (a cause de la fonction sprintf...)
 unsigned int afftotaliskm = 0; //créé cause bug affichage avec les km qui dépassent 32700 (a cause de la fonction sprintf...)
 boolean effachrono = LOW; //pour choix de reset chronos
-unsigned int q = 1; //pour boucle effacement chronos
+byte q = 1; //pour boucle effacement chronos
 
 //NOTA Sur l'utilisation de "sprintf". j'aurais pu afficher directement la valeur avec tft.print(affmin) par exemple.
 //mais dans ce cas ça n'affiche que les digits actifs. par exemple 3 et pas 03.
@@ -155,13 +155,13 @@ unsigned int q = 1; //pour boucle effacement chronos
 void setup() {
   
 //déclaration des entrées TOR et de leur état de départ. NOTA : déclarée HIGH pour état stable qui demande une mise a LOW (mise a la masse, au 0v).
-pinMode(up, INPUT); digitalWrite(up, HIGH);
-pinMode(dwn, INPUT); digitalWrite(dwn, HIGH);
-pinMode(rst, INPUT); digitalWrite(rst, HIGH);
-pinMode(capteur, INPUT); digitalWrite(capteur, HIGH);
-pinMode(capteurbande, INPUT); digitalWrite(capteurbande, HIGH);
+pinMode(UP, INPUT); digitalWrite(UP, HIGH);
+pinMode(DWN, INPUT); digitalWrite(DWN, HIGH);
+pinMode(RST, INPUT); digitalWrite(RST, HIGH);
+pinMode(CAPTEUR, INPUT); digitalWrite(CAPTEUR, HIGH);
+pinMode(CAPTEURBANDE, INPUT); digitalWrite(CAPTEURBANDE, HIGH);
 //déclaration des sorties TOR et de leur état de départ
-pinMode(batfaible, OUTPUT); digitalWrite(batfaible, LOW);
+pinMode(BATFAIBLE, OUTPUT); digitalWrite(BATFAIBLE, LOW);
 
 //initialisation de l'écran
 Serial.begin(9600);
@@ -193,7 +193,7 @@ Serial.println(totaliskm);
 
 //ECRANS DE DEMARRAGE ET DE PARAMETRAGE :
 
-if (digitalRead(up) == LOW) {  //ça permet de passer par les écrans de paramétrage si UP est maintenu au démarrage
+if (digitalRead(UP) == LOW) {  //ça permet de passer par les écrans de paramétrage si UP est maintenu au démarrage
   
 //écran d'accueil :-) pour choix mode vectorino
 tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
@@ -208,7 +208,7 @@ tft.setCursor(30,150);
 tft.println("v2.6-08/2018");
 tft.setTextSize(2);
 
-while (digitalRead(rst) == HIGH) {
+while (digitalRead(RST) == HIGH) {
 
   if (modevector==1) {
 tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
@@ -246,8 +246,8 @@ tft.println(" ->Route");
 
   } 
 
-  if (digitalRead(up) == LOW) { modevector--;}
-  if (digitalRead(dwn) == LOW) { modevector++;}
+  if (digitalRead(UP) == LOW) { modevector--;}
+  if (digitalRead(DWN) == LOW) { modevector++;}
   if (modevector<2) {modevector=1;}
   if (modevector>2) {modevector=3;}
 
@@ -279,10 +279,10 @@ tft.setTextSize(2);
 
 //gestion du diamètre de roue : affichage et ajustement sur l'écran d'accueil
 tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
-while (digitalRead(rst) == HIGH) { tft.setCursor(25,50); sprintf(buffer, "%03d", roue); tft.print(buffer); delay(100); //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
-  if (digitalRead(dwn) == LOW) {roue--;}
+while (digitalRead(RST) == HIGH) { tft.setCursor(25,50); sprintf(buffer, "%03d", roue); tft.print(buffer); delay(100); //tant que j'appuie pas sur le bouton RST, je reste sur cet écran
+  if (digitalRead(DWN) == LOW) {roue--;}
   if (roue<2) {roue=1;}
-  if (digitalRead(up) == LOW) {roue++;}
+  if (digitalRead(UP) == LOW) {roue++;}
   if (roue>300) {roue=300;}
 }
 
@@ -294,10 +294,10 @@ delay(300);
 tft.setTextColor(ST7735_MAGENTA,ST7735_BLACK);
 tft.setCursor(25,50); sprintf(buffer, "%03d", roue); tft.print(buffer);
 tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
-while (digitalRead(rst) == HIGH) { tft.setCursor(55,110); sprintf(buffer, "%01d", nbaimants); tft.print(buffer); delay(100); //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
-  if (digitalRead(dwn) == LOW) {nbaimants--;}
+while (digitalRead(RST) == HIGH) { tft.setCursor(55,110); sprintf(buffer, "%01d", nbaimants); tft.print(buffer); delay(100); //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
+  if (digitalRead(DWN) == LOW) {nbaimants--;}
   if (nbaimants<2) {nbaimants=1;}
-  if (digitalRead(up) == LOW) {nbaimants++;}
+  if (digitalRead(UP) == LOW) {nbaimants++;}
   if (nbaimants>9) {nbaimants=9;}
 }
 
@@ -323,10 +323,10 @@ tft.setTextSize(2);
 
 //gestion du coef correcteur de vitesse : affichage et ajustement sur l'écran d'accueil
 tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
-while (digitalRead(rst) == HIGH) { tft.setCursor(30,70); sprintf(buffer, "%03d", correcv); tft.print(buffer); delay(100); //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
-  if (digitalRead(dwn) == LOW) {correcv--;}
+while (digitalRead(RST) == HIGH) { tft.setCursor(30,70); sprintf(buffer, "%03d", correcv); tft.print(buffer); delay(100); //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
+  if (digitalRead(DWN) == LOW) {correcv--;}
   if (correcv<=50) {correcv=50;}
-  if (digitalRead(up) == LOW) {correcv++;}
+  if (digitalRead(UP) == LOW) {correcv++;}
   if (correcv>=150) {correcv=150;}
 }
 
@@ -354,9 +354,9 @@ tft.println("v2.6-08/2018");
 tft.setTextSize(2);
 //gestion du nombre de bandes : affichage et ajustement sur l'écran d'accueil
 tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
-while (digitalRead(rst) == HIGH) { tft.setCursor(10,100); tft.print(nbbandes); delay(100); //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
-  if (digitalRead(dwn) == LOW) {nbbandes--;}
-  if (digitalRead(up) == LOW) {nbbandes++;}
+while (digitalRead(RST) == HIGH) { tft.setCursor(10,100); tft.print(nbbandes); delay(100); //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
+  if (digitalRead(DWN) == LOW) {nbbandes--;}
+  if (digitalRead(UP) == LOW) {nbbandes++;}
   if (nbbandes<=1) {nbbandes=1;}
   if (nbbandes>=9) {nbbandes=9;}
 }
@@ -385,7 +385,7 @@ tft.setCursor(30,150);
 tft.println("v2.6-08/2018");
 tft.setTextSize(2);
 
-while (digitalRead(rst) == HIGH) {
+while (digitalRead(RST) == HIGH) {
 
   if (effachrono==HIGH) {
   tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
@@ -405,8 +405,8 @@ while (digitalRead(rst) == HIGH) {
   tft.println("NON");
   }
 
-  if (digitalRead(up) == LOW) { effachrono=HIGH;}
-  if (digitalRead(dwn) == LOW) { effachrono=LOW;}
+  if (digitalRead(UP) == LOW) { effachrono=HIGH;}
+  if (digitalRead(DWN) == LOW) { effachrono=LOW;}
     
   }
 
@@ -445,13 +445,13 @@ tft.setTextSize(2);
 
 //gestion du totalisateur : affichage et ajustement sur l'écran d'accueil
 tft.setTextColor(ST7735_YELLOW,ST7735_BLACK);
-while (digitalRead(rst) == HIGH) { //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
+while (digitalRead(RST) == HIGH) { //tant que j'appuie pas sur le bouton rst, je reste sur cet écran
   afftotalismkm = (totaliskm/1000);
   afftotaliskm = (totaliskm-afftotalismkm*1000);
     tft.setCursor(15,70); sprintf(buffer, "%02d", afftotalismkm); tft.print(buffer); sprintf(buffer, "%03d", afftotaliskm); tft.print(buffer); delay(100); 
-  if (digitalRead(dwn) == LOW) {(totaliskm=(totaliskm-100));}
+  if (digitalRead(DWN) == LOW) {(totaliskm=(totaliskm-100));}
   if (totaliskm<100) {totaliskm=100;}
-  if (digitalRead(up) == LOW) {(totaliskm=(totaliskm+100));}
+  if (digitalRead(UP) == LOW) {(totaliskm=(totaliskm+100));}
   if (totaliskm>99900) {totaliskm=99900;}
 }
 
@@ -561,10 +561,10 @@ if (modevector == 3) {EEPROM.get(960,cm); cmavant = cm;} //pour récupérer la v
 EEPROM.get(970,tours); //pour repartir du bon numéro de tour (placé ici en aval du choix reset qui l'aurait éventuellement remis a 1
 
 //Surveille état de capteur de roue pour lancer la routine "increment" sur front descendant 
-attachInterrupt(digitalPinToInterrupt(capteur), increment, FALLING);
+attachInterrupt(digitalPinToInterrupt(CAPTEUR), increment, FALLING);
 
 //Surveille état de capteur de bande magnétique pour lancer la routine "resettour" sur front descendant 
-attachInterrupt(digitalPinToInterrupt(capteurbande), resettour, FALLING);
+attachInterrupt(digitalPinToInterrupt(CAPTEURBANDE), resettour, FALLING);
 
 //affiche le chrono vierge au départ en mode alfano (sans ça l'affichage n'apparait pas tant qu'il y a pas eu de "capteur bande"
 if (modevector == 2) {affiche_chrono_et_tour();}
@@ -626,8 +626,8 @@ void loop() {
 Serial.println("void loop lance");
 
 //SURVEILLANCE DE LA TENSION DE LA BATTERIE POUR ALLUMAGE LED BATTERIE FAIBLE
-if (analogRead(voltbat) < 760) { digitalWrite(batfaible, HIGH);}
-else {digitalWrite(batfaible, LOW);}
+if (analogRead(VOLTBAT) < 760) { digitalWrite(BATFAIBLE, HIGH);}
+else {digitalWrite(BATFAIBLE, LOW);}
 //si tension est moins de 3,4v (5v=1023; suite a test 760environ équivalent à 3.4v) j'allume la led, sachant que la batterie chargée fait 3.7 a 3.8 et qu'elle coupe a ?(3.0v apparemment)
 
 
@@ -647,11 +647,11 @@ if (totalis>100000) { // a chaque fois que j'ai parcouru 1km, j'incrémente le t
 if (modevector == 1) {
 
 //gestion du reset
-if (digitalRead(rst) == LOW) {cm = 0; cmavant = cm; vmoy = 0; tpsinit = (millis()/1000); vmax = 0;} //reset le compteur et les données pour calcul vmoy, vmax et le chrono
+if (digitalRead(RST) == LOW) {cm = 0; cmavant = cm; vmoy = 0; tpsinit = (millis()/1000); vmax = 0;} //reset le compteur et les données pour calcul vmoy, vmax et le chrono
 
 //gestion de l'ajustement du trip
-if (digitalRead(up) == LOW) {cm = (cm+5000); cmavant = cm; j = millis(); } //corrige en plus et fige momentanément le calcul de Vitesse instantanée
-if (digitalRead(dwn) == LOW) {cm = (cm-5000); cmavant = cm; j = millis(); } //corrige en moins et fige momentanément le calcul de Vitesse instantanée
+if (digitalRead(UP) == LOW) {cm = (cm+5000); cmavant = cm; j = millis(); } //corrige en plus et fige momentanément le calcul de Vitesse instantanée
+if (digitalRead(DWN) == LOW) {cm = (cm-5000); cmavant = cm; j = millis(); } //corrige en moins et fige momentanément le calcul de Vitesse instantanée
 if (cm <= 0) {cm = 0; cmavant = cm;} //pour que la correction en moins s'arrête a zero
 
 //affichage distance
@@ -700,7 +700,7 @@ else {
 if (modevector == 2) {
 
 //gestion du reset total
-if (digitalRead(rst) == LOW) {
+if (digitalRead(RST) == LOW) {
   cm=0;
   cmavant = cm;
   tpsinit=(millis()/10);
@@ -724,7 +724,7 @@ tft.setCursor(27,0); sprintf(buffer, "%02d", affsec); tft.print(buffer);
 tft.setCursor(79,0); sprintf(buffer, "%02d", affcent); tft.print(buffer);}
 
 // la détection de fin de tour est faite par le signal "capteurbande" mais peut etre fait à la main par le bouton "up" grace a ça :
-if (digitalRead(up) == LOW) { resettour(); }
+if (digitalRead(UP) == LOW) { resettour(); }
 // si le tour atteint 10 min, ça repart à zéro (pour éviter un bug d'affichage si on laisse tourner plus de 10minutes sans déclenchement)
 if (tps > 59900) { tpsinit = (millis()/10); }
 
@@ -746,16 +746,16 @@ if (vmax > vmaxabsolue) {vmaxabsolue = vmax;} //la Vmaxabsolue se met a jour qua
 tft.setCursor(0,114); sprintf(buffer, "%03d", vmaxabsolue); tft.print(buffer);
 
 //passage en mode lecture
-if (digitalRead(dwn) == LOW) { modelecture = HIGH; afftour = tours; }
+if (digitalRead(DWN) == LOW) { modelecture = HIGH; afftour = tours; }
 
 while (modelecture == HIGH) {
   tft.setCursor(0,0); tft.print("-");
   tft.setCursor(27,0); tft.print("--");
   tft.setCursor(79,0); tft.print("--");
   tft.setCursor(0,76); tft.print("---");
-  if (digitalRead(up) == LOW) { afftour++;}
+  if (digitalRead(UP) == LOW) { afftour++;}
   if (afftour>80) {afftour = 1;}
-  if (digitalRead(dwn) == LOW) { afftour--;}
+  if (digitalRead(DWN) == LOW) { afftour--;}
   if (afftour<1) {afftour = 80;}
   EEPROM.get(afftour*10,chrono);
   if ((chrono<2) || (chrono>59900)) {chrono=0;} //pour forcer l'affichage d'un chrono zero s'il est irréaliste
@@ -772,7 +772,7 @@ while (modelecture == HIGH) {
   tft.setTextSize(4);
   tft.setCursor(0,114); sprintf(buffer, "%03d", affvmax); tft.print(buffer); //pour affichage de la vmax correspondante a ce tour
     
-  if (digitalRead(rst) == LOW) {
+  if (digitalRead(RST) == LOW) {
     delay(300); //délai pour éviter de sortir du mode lecture et faire un reset involontaire dans la foulée
     //pour remettre a jour l'affichage du top chrono et du tour en cours : (car ces affichages ont été changés par le mode lecture,
     //et ne seront à nouveau a jour qu'au nouveau "resettour" qui n'est pas forcément immédiat
@@ -791,7 +791,7 @@ if (modevector == 3) {
 tft.setTextSize(3);
 
 //gestion du reset
-if (digitalRead(rst) == LOW) {cm = 0; cmavant = cm;} //reset le trip
+if (digitalRead(RST) == LOW) {cm = 0; cmavant = cm;} //reset le trip
 
 //affichage distance
 if (cm > 99900000) {cm = 0;} //la distance retombe a zéro au dela de 999.0km. pour éviter les bugs d'affichage
