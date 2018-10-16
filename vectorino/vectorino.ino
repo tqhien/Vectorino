@@ -94,7 +94,7 @@
 //Définition de l'interface de sortie : soit adafruit TFT (par défaut), soit console, soit pour un autre affichage
 // On définira des macros pour chaque interface. L'appel sera toujours le même mais la fonction réellement appelée sera adaptée à l'interface
 
-#define ADAFRUIT_TFT // commenter pour activer l'affichage par console, sinon c'est le TFT Adafruit par défaut
+//#define ADAFRUIT_TFT // commenter pour activer l'affichage par console, sinon c'est le TFT Adafruit par défaut
 
 #ifdef ADAFRUIT_TFT
   //bibliothèques pour écran ST7735
@@ -119,16 +119,20 @@
   #define POSITIONCURSEUR(x,y) tft.setCursor(x,y)
   #define TAILLETEXTE(x) tft.setTextSize (x)
   #define COULEURTEXTE(x,y) tft.setTextColor(x,y)
+  #define ENTETE(x)
   #define RETOURLIGNE(x)
+  #define DELAYS(x)
 #else
   #define INITIALISEECRAN(x) // rien à faire pour la console
   #define REMPLITECRAN(x)
-  #define AFFICHE(x) Serial.print(x);
+  #define AFFICHE(x) Serial.print(x)
   #define AFFICHELN(x) Serial.println(x)
-  #define POSITIONCURSEUR(x,y) Serial.print(";");
+  #define POSITIONCURSEUR(x,y) Serial.print(";")
   #define TAILLETEXTE(x)
   #define COULEURTEXTE(x,y)
+  #define ENTETE(x) Serial.print(x)
   #define RETOURLIGNE(x) Serial.println(x)
+  #define DELAYS(x) delays(x)
 #endif
 
 
@@ -707,6 +711,8 @@ if (digitalRead(UP) == LOW) {vs.cm = (vs.cm+5000); cmavant = vs.cm; j = millis()
 if (digitalRead(DWN) == LOW) {vs.cm = (vs.cm-5000); cmavant = vs.cm; j = millis(); } //corrige en moins et fige momentanément le calcul de Vitesse instantanée
 if (vs.cm <= 0) {vs.cm = 0; cmavant = vs.cm;} //pour que la correction en moins s'arrête a zero
 
+ENTETE("R") ; // R comme Rallye
+
 //affichage distance
 if (vs.cm > 9990000) {vs.cm = 0; cmavant = vs.cm;} //la distance retombe a zéro au dela de 99km90. pour éviter les bugs d'affichage
 affkm = vs.cm/100000;
@@ -736,7 +742,8 @@ else {
   vinstant = vinstant/200000; //ça équivaut à un calcul de moyenne sur les 2 dernières secondes
   if (vinstant > 400) {vinstant = 400;} //bridage de la vitesse a 400 pour éviter les bugs d'affichage
   j = (millis());
-  cmavant = vs.cm;}
+  cmavant = vs.cm;
+  POSITIONCURSEUR(0,76); sprintf(buffer, "%03d", vinstant); AFFICHE(buffer);}
 
 //affichage vmax
   if (vinstant > vmax) {vmax = vinstant;} //la Vmax se met a jour quand la Vinstant la dépasse
@@ -769,6 +776,9 @@ if (digitalRead(RST) == LOW) {
 if (depart == HIGH) { tps = 0;
 POSITIONCURSEUR(0,0); AFFICHE("!"); POSITIONCURSEUR(27,0); AFFICHE("GO"); POSITIONCURSEUR(79,0); AFFICHE("!!");} //si on est en mode départ, on affiche "GO"
 else {tps = ((millis()/10)-tpsinit); //si on est pas en mode départ, on calcule le temps depuis reset chrono (en centiemes de sec)
+
+ENTETE("P") ; // P comme Piste
+
 affmin = (tps/6000); //affmin étant un entier, la division ne donne que les minutes pleines
 affsec = ((tps-affmin*6000)/100); //pour n'avoir que les secondes, je prends le temps total moins les minutes pleines x 60.
 affcent = (tps-((affmin*6000)+(affsec*100))); //et rebelotte pour avoir les centiemes
@@ -790,7 +800,9 @@ else {
   vinstant = vinstant/200000; //ça équivaut à un calcul de moyenne sur les 2 dernières secondes
   if (vinstant > 400) {vinstant = 400;} //bridage de la vitesse a 400 pour éviter les bugs d'affichage
   j = (millis());
-  cmavant = vs.cm;}
+  cmavant = vs.cm;
+  POSITIONCURSEUR(0,76); sprintf(buffer, "%03d", vinstant); AFFICHE(buffer);
+  }
 
 
 //affichage vmax
@@ -817,6 +829,7 @@ while (modelecture == HIGH) {
   affcent = (chrono-((affmin*6000)+(affsec*100))); //pour afficher le chrono correspondant au tour sélectionné
   EEPROM.get((afftour*10+5),affvmax);
   if ((affvmax<2) || (affvmax>400)) {affvmax=0;} //pour forcer l'affichage d'une vmax a zero si valeur irréaliste
+  ENTETE("B"); // B comme Best
   POSITIONCURSEUR(0,38); sprintf(buffer, "%01d", affmin); AFFICHE(buffer);
   POSITIONCURSEUR(27,38); sprintf(buffer, "%02d", affsec); AFFICHE(buffer);
   POSITIONCURSEUR(79,38); sprintf(buffer, "%02d", affcent); AFFICHE(buffer);
@@ -848,6 +861,9 @@ if (digitalRead(RST) == LOW) {vs.cm = 0; cmavant = vs.cm;} //reset le trip
 
 //affichage distance
 if (vs.cm > 99900000) {vs.cm = 0;} //la distance retombe a zéro au dela de 999.0km. pour éviter les bugs d'affichage
+
+ENTETE("O") ; // O comme Odometre
+
 affkm = vs.cm/100000;
 affm = (vs.cm-affkm*100000)/10000;
 POSITIONCURSEUR(10,75); sprintf(buffer, "%03d", affkm); AFFICHE(buffer);
@@ -868,14 +884,25 @@ else {
   vinstant = vinstant/200000; //ça équivaut à un calcul de moyenne sur les 2 dernières secondes
   if (vinstant > 400) {vinstant = 400;} //bridage de la vitesse a 400 pour éviter les bugs d'affichage
   j = (millis());
-  cmavant = vs.cm;}
+  cmavant = vs.cm;
+  POSITIONCURSEUR(0,0); sprintf(buffer, "%03d", vinstant); AFFICHE(buffer);
+  }
 
 
 
 }
 
 RETOURLIGNE();
+DELAYS(250);
 
+}
+
+void delays (int x) {
+  unsigned long debutMillis = millis();
+  unsigned long currentMillis = millis() ;
+  while (currentMillis - debutMillis < x) {
+    currentMillis = millis() ;
+  }
 }
 
 /** Fonctions de lecture et de sauvegarde des données utilisateurs : paramètres et distance parcourue **/
